@@ -8,8 +8,15 @@
 -- strategy correct when email confirmation is enabled: an unconfirmed account
 -- has no profile row until it actually has a session.
 --
--- This migration is reviewed before it is applied. It has not been pushed to
--- the remote project.
+-- Applied live as version 20261022145520 (name: create_profiles).
+--
+-- This file was renamed from 20261022120000_create_profiles.sql so the
+-- repository version matches Supabase migration history. Renaming a file does
+-- not change database history, and this SQL must not be re-applied to the live
+-- project.
+--
+-- A later security migration (20261022150450) reinforced the trigger-function
+-- privilege revokes. See docs/stage-1.md for the version mapping.
 
 create table public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,

@@ -128,9 +128,22 @@ behaviour correct with email confirmation enabled: an unconfirmed account has no
 session and therefore no profile row. Concurrent creates resolve by re-reading
 the row. No `SECURITY DEFINER` function is used.
 
-## Database migration
+## Database migrations
 
-`supabase/migrations/20261022120000_create_profiles.sql` creates
+Applied Supabase migration history:
+
+| Version | Name | Repository file |
+| --- | --- | --- |
+| `20261022145520` | `create_profiles` | `supabase/migrations/20261022145520_create_profiles.sql` |
+| `20261022150450` | `revoke_profiles_trigger_function_api_execute` | `supabase/migrations/20261022150450_revoke_profiles_trigger_function_api_execute.sql` |
+| `20261022150455` | `revoke_profiles_trigger_function_api_execute` | None — duplicate live history entry, intentionally not recreated |
+
+The baseline file was renamed from `20261022120000_create_profiles.sql` to
+match the applied version. Renaming a file does not change database history.
+All three versions are already applied, so they must not be re-run, and
+migration history must not be edited by hand.
+
+`supabase/migrations/20261022145520_create_profiles.sql` creates
 `public.profiles`, enables row-level security, and defines own-row select /
 insert / update policies. It also:
 
@@ -143,10 +156,15 @@ insert / update policies. It also:
   empty `search_path`, with execution revoked from `PUBLIC`, `anon`, and
   `authenticated`.
 
-**This migration has been applied to the remote project.** The file remains the
-source of truth: future schema changes must ship as new migrations. Database
-types are still hand-maintained until they are regenerated from the remote
-schema.
+The forward privilege migration
+`20261022150450_revoke_profiles_trigger_function_api_execute.sql` records the
+applied correction revoking `EXECUTE` from `PUBLIC`, `anon`, and `authenticated`;
+`postgres` retains execution.
+
+**These migrations have already been applied to the remote project.** The files
+remain the source of truth for reproducibility: future schema changes must ship
+as new migrations. Database types are still hand-maintained until they are
+regenerated from the remote schema.
 
 ## Project structure
 

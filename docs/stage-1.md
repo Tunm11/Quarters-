@@ -37,7 +37,7 @@
 
 ## Migration (applied)
 
-File: `supabase/migrations/20261022120000_create_profiles.sql`
+Baseline file: `supabase/migrations/20261022145520_create_profiles.sql`
 
 | Item | Decision |
 | --- | --- |
@@ -57,6 +57,30 @@ agent that authored this stage did not apply it and performed no database write.
 After application, an anonymous `select` on `public.profiles` returned
 PostgreSQL `42501` (permission denied), consistent with the table existing and
 the `anon` grant being revoked.
+
+### Live history vs repository
+
+The project owner verified the live `supabase_migrations.schema_migrations`
+entries. This environment only has the publishable key, so it cannot read that
+schema directly; the repository mapping below follows the owner-verified state.
+
+| Live version | Live name | Repository file |
+| --- | --- | --- |
+| `20261022145520` | `create_profiles` | `20261022145520_create_profiles.sql` |
+| `20261022150450` | `revoke_profiles_trigger_function_api_execute` | `20261022150450_revoke_profiles_trigger_function_api_execute.sql` |
+| `20261022150455` | `revoke_profiles_trigger_function_api_execute` | None — duplicate live entry, intentionally not recreated |
+
+The original repository file was named
+`20261022120000_create_profiles.sql`. It was renamed to the applied version so
+`supabase migration list` can compare versions correctly. **A filename change
+does not change the database's migration history**, and neither the baseline nor
+the forward privilege migration may be re-applied to production.
+
+The baseline file keeps the original schema SQL. Its trigger-function `REVOKE`
+and the forward privilege migration both target the same final privilege state;
+they are idempotent, and the live project has already executed the correction.
+The duplicate `20261022150455` entry was not erased, edited, or recreated as a
+second migration.
 
 ## Authentication behaviour
 
@@ -89,7 +113,8 @@ the `anon` grant being revoked.
 
 Created:
 
-- `supabase/migrations/20261022120000_create_profiles.sql`
+- `supabase/migrations/20261022145520_create_profiles.sql` (renamed from `20261022120000_...`)
+- `supabase/migrations/20261022150450_revoke_profiles_trigger_function_api_execute.sql`
 - `scripts/check-supabase.mjs`
 - `src/vite-env.d.ts`
 - `src/lib/supabase.ts`, `src/lib/supabase-config.ts`,
@@ -146,16 +171,23 @@ Modified:
 
 ## Remaining limitations and next steps
 
-1. **Configure redirect URLs** in Supabase Auth (Site URL plus the app origin and
+1. **Duplicate live migration entry.** Supabase history contains both
+   `20261022150450` and `20261022150455` for
+   `revoke_profiles_trigger_function_api_execute`. Only the `...450` version has
+   a repository file; the duplicate was not erased or recreated. Decide whether
+   to leave it as a historical artifact or reconcile it later with the official
+   Supabase CLI, after a backup and explicit approval. Do not edit
+   `schema_migrations` by hand.
+2. **Configure redirect URLs** in Supabase Auth (Site URL plus the app origin and
    preview origin) so confirmation links return to the app.
-2. **Regenerate database types** from the applied schema and replace the
+3. **Regenerate database types** from the applied schema and replace the
    hand-maintained `src/lib/database.types.ts`.
-3. **Live auth and profile verification** with a real test account is still
+4. **Live auth and profile verification** with a real test account is still
    pending; it requires an inbox for the confirmation link and a signed-in
    session. The policy behaviour has not been exercised with an authenticated
    role.
-4. **Not built in this stage:** password reset, email change, avatar uploads,
+5. **Not built in this stage:** password reset, email change, avatar uploads,
    onboarding fields (campus, budget, preferences), account deletion, and any
    listing/roommate schema. Those need product decisions, not scaffolding.
-5. **No deploy was performed.** The migration was applied by the project owner
+6. **No deploy was performed.** The migration was applied by the project owner
    outside this agent run, not by the agent.
