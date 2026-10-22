@@ -44,7 +44,7 @@ const currentScope = [
   "Reusable, accessible UI primitives and state foundations",
   "Email/password accounts through Supabase Auth",
   "A protected account route that waits for the session check",
-  "A profiles migration, written and awaiting review",
+  "An applied profiles table with owner-only RLS",
 ];
 
 const laterStages = [
@@ -135,9 +135,10 @@ export default function HowItWorksPage() {
         </div>
         <p className="text-xs leading-relaxed text-subtle">
           There is no mock backend, no simulated sign-in, and no hidden data
-          layer in this build. Supabase is connected for authentication only.
-          The profiles migration is written and awaiting review, so profile rows
-          read or written from the app fail loudly until it is applied.
+          layer in this build. Supabase handles authentication and owner-only
+          profiles, so one account cannot read another account's profile. If the
+          table or a policy is missing, profile requests fail loudly instead of
+          falling back to cached or invented data.
         </p>
       </section>
 

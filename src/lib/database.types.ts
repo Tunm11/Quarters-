@@ -1,11 +1,11 @@
 /**
  * Types for the QUARTERS Supabase schema.
  *
- * This is hand-maintained because the Stage 1 migration has not been applied to
- * the remote project yet, so generated types cannot be produced from it. Keep
- * this file in sync with `supabase/migrations/*.sql`. Once the migration is
- * applied, regenerate with `supabase gen types typescript` and commit the
- * result instead of editing this by hand.
+ * This is hand-maintained because the types have not yet been regenerated from
+ * the applied Stage 1 schema. Keep this file in sync with
+ * `supabase/migrations/*.sql`; when the Supabase CLI is available, regenerate
+ * with `supabase gen types typescript` and commit the result instead of editing
+ * this by hand.
  */
 
 export type Json =

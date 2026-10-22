@@ -35,7 +35,7 @@
    allowed redirect URLs still need to include the deployed origin (and the
    preview origin while testing).
 
-## Migration (not applied)
+## Migration (applied)
 
 File: `supabase/migrations/20261022120000_create_profiles.sql`
 
@@ -52,8 +52,11 @@ File: `supabase/migrations/20261022120000_create_profiles.sql`
 | Grants | `select`; `insert (id, display_name, avatar_url)`; `update (display_name, avatar_url)` to `authenticated`; `revoke all` from `anon` |
 | Timestamps | `updated_at` maintained by a `SECURITY INVOKER` trigger with `search_path = ''`; execute revoked from `PUBLIC`, `anon`, and `authenticated` |
 
-The migration has **not** been pushed or applied. No Supabase database operation
-was performed in this stage.
+The migration has been applied to the remote project by the project owner. The
+agent that authored this stage did not apply it and performed no database write.
+After application, an anonymous `select` on `public.profiles` returned
+PostgreSQL `42501` (permission denied), consistent with the table existing and
+the `anon` grant being revoked.
 
 ## Authentication behaviour
 
@@ -129,25 +132,30 @@ Modified:
 | `bun run check:supabase` | Both variables set (publishable key); auth health HTTP 200 |
 | HTTP `GET /`, `/auth`, `/auth?mode=signup`, `/account`, `/explore`, and the auth/account/client modules on the dev server | All 200 |
 | `freebuff-preview restart` | Preview ready and listening on 5173 |
+| Anonymous `GET /rest/v1/profiles?select=id&limit=1` after the owner applied the migration | HTTP 401, code `42501`; table present, anonymous access denied, no rows read |
 
 ## Live Supabase operations actually performed
 
 - `GET {project}/auth/v1/health` with the publishable key: **HTTP 200**.
-- Nothing else. No sign-up, sign-in, profile query, table creation, migration, or
-  other database write/read was performed against the real project.
+- After the project owner applied the migration, a read-only anonymous request to
+  `/rest/v1/profiles?select=id&limit=1` returned **HTTP 401** with PostgreSQL
+  code `42501` (`permission denied for table profiles`). This confirms the table
+  exists and anonymous access is denied; no rows were returned or written.
+- No sign-up, sign-in, table creation, migration application, or database write
+  was performed by the agent.
 
 ## Remaining limitations and next steps
 
-1. **Apply the migration after review.** Until then `/account` shows a clear
-   "profile table is not available" error. No profile data is written.
-2. **Configure redirect URLs** in Supabase Auth (Site URL plus the app origin and
+1. **Configure redirect URLs** in Supabase Auth (Site URL plus the app origin and
    preview origin) so confirmation links return to the app.
-3. **Regenerate database types** after applying the migration and replace the
+2. **Regenerate database types** from the applied schema and replace the
    hand-maintained `src/lib/database.types.ts`.
-4. **Live auth verification** with a real email address is still pending; that
-   requires a test account and, if enabled, an inbox for the confirmation link.
-5. **Not built in this stage:** password reset, email change, avatar uploads,
+3. **Live auth and profile verification** with a real test account is still
+   pending; it requires an inbox for the confirmation link and a signed-in
+   session. The policy behaviour has not been exercised with an authenticated
+   role.
+4. **Not built in this stage:** password reset, email change, avatar uploads,
    onboarding fields (campus, budget, preferences), account deletion, and any
    listing/roommate schema. Those need product decisions, not scaffolding.
-6. **No deploy, no commit, no migration application** was performed as part of
-   this stage.
+5. **No deploy was performed.** The migration was applied by the project owner
+   outside this agent run, not by the agent.

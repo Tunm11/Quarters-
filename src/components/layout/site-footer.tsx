@@ -31,8 +31,8 @@ export function SiteFooter() {
         <div className="flex flex-col gap-1.5 text-xs text-subtle">
           <p className="font-medium text-muted">Stage 1 — Accounts</p>
           <p>
-            Email accounts are handled by Supabase Auth. No listings or payments
-            yet; the profiles migration awaits review.
+            Email accounts and owner-only profiles run on Supabase. No listings
+            or payments yet.
           </p>
           <p>© {new Date().getFullYear()} QUARTERS</p>
         </div>

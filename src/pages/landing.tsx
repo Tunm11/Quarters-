@@ -64,7 +64,7 @@ const readyNow = [
 ];
 
 const notBuiltYet = [
-  "Profiles migration approval (SQL written, not applied)",
+  "Profile onboarding, avatars, and email changes",
   "Live listings and roommate matching",
   "Viewing requests, messaging, and payments",
 ];
@@ -191,8 +191,8 @@ export default function LandingPage() {
 
             <p className="flex max-w-lg items-start gap-2 text-xs leading-relaxed text-subtle">
               <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-              Honest status: accounts run on real Supabase Auth. Listings and
-              the profiles migration are still pending review.
+              Honest status: accounts and owner-only profiles run on Supabase.
+              Listings are still ahead.
             </p>
           </div>
 
@@ -338,9 +338,8 @@ export default function LandingPage() {
               ))}
             </ul>
             <p className="mt-auto text-xs leading-relaxed text-subtle">
-              Supabase is connected for authentication only. The profiles
-              migration is written and awaiting review; no listings, messaging,
-              or payments are wired up yet.
+              Supabase handles authentication and owner-only profiles. No
+              listings, messaging, or payments are wired up yet.
             </p>
           </Panel>
         </div>
@@ -361,8 +360,8 @@ export default function LandingPage() {
             </h2>
             <p className="max-w-lg text-sm leading-relaxed text-muted">
               Sign up with email and password. Supabase issues and confirms the
-              account; listings arrive after the profiles migration is reviewed
-              and applied.
+              account and keeps your profile private to you; listings arrive in
+              a later stage.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link

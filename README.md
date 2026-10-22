@@ -22,8 +22,7 @@ Working in this repository:
 - Persistent sessions, restored by Supabase on load.
 - A protected `/account` route that waits for the initial session check.
 - A typed Supabase client with explicit missing-configuration handling.
-- A version-controlled profiles migration with RLS and least-privilege grants,
-  not yet applied.
+- An applied `public.profiles` table with RLS and least-privilege grants.
 - Landing, Explore shell, How-it-works page, 404, design tokens, and UI
   primitives from Stage 0.
 
@@ -31,9 +30,10 @@ Working in this repository:
 messaging, payments, avatars/uploads, email changes, and account deletion.
 No mock API, mock auth, or fallback backend exists.
 
-The profiles migration is written but **has not been applied** to the remote
-Supabase project. Until it is applied, `/account` shows an explicit profile
-error instead of pretending the profile loaded.
+The profiles migration has been applied to the Supabase project. `/account`
+reads and writes only the signed-in user's row; if the table or an RLS policy is
+missing, it shows an explicit profile error instead of pretending the profile
+loaded.
 
 See [`docs/stage-0.md`](docs/stage-0.md) and
 [`docs/stage-1.md`](docs/stage-1.md) for the scope records.
@@ -143,14 +143,15 @@ insert / update policies. It also:
   empty `search_path`, with execution revoked from `PUBLIC`, `anon`, and
   `authenticated`.
 
-**It has not been applied to the remote project.** Review it, then apply it with
-your normal Supabase workflow before relying on profiles. Types will be
-regenerated from the remote schema at that point.
+**This migration has been applied to the remote project.** The file remains the
+source of truth: future schema changes must ship as new migrations. Database
+types are still hand-maintained until they are regenerated from the remote
+schema.
 
 ## Project structure
 
 ```text
-supabase/migrations/      Version-controlled SQL (not applied yet)
+supabase/migrations/      Version-controlled SQL migrations
 scripts/check-supabase.mjs Non-destructive config/health check
 src/
   auth/                   Auth provider, profile bootstrap, protected route

@@ -3,7 +3,7 @@ import type { ProfileRow } from "@/lib/database.types";
 import type { TypedSupabaseClient } from "@/lib/supabase";
 
 export const PROFILES_MIGRATION_MISSING_MESSAGE =
-  "Your profile table is not available yet. The Stage 1 profiles migration has not been applied to this Supabase project.";
+  "Your profile table is not available. The Stage 1 profiles migration may not be applied to this Supabase project, or its grants may be missing.";
 
 export type ProfileResult =
   | { profile: ProfileRow; error: null }
