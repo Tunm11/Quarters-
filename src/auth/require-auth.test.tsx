@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import { AuthContext, type AuthContextValue } from "@/auth/auth-provider";
 import { RequireAuth } from "@/auth/require-auth";
@@ -24,10 +24,20 @@ function createAuthValue(overrides: Partial<AuthContextValue>): AuthContextValue
   };
 }
 
-function renderGate(value: AuthContextValue) {
+function AuthScreen() {
+  const location = useLocation();
+  return (
+    <>
+      <p>Auth screen</p>
+      <p data-testid="auth-search">{location.search}</p>
+    </>
+  );
+}
+
+function renderGate(value: AuthContextValue, initialEntry = "/account") {
   return render(
     <AuthContext.Provider value={value}>
-      <MemoryRouter initialEntries={["/account"]}>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <Routes>
           <Route
             path="/account"
@@ -37,7 +47,7 @@ function renderGate(value: AuthContextValue) {
               </RequireAuth>
             }
           />
-          <Route path="/auth" element={<p>Auth screen</p>} />
+          <Route path="/auth" element={<AuthScreen />} />
         </Routes>
       </MemoryRouter>
     </AuthContext.Provider>,
@@ -64,6 +74,14 @@ describe("RequireAuth", () => {
 
     expect(screen.getByText("Auth screen")).toBeTruthy();
     expect(screen.queryByText("Protected content")).toBeNull();
+  });
+
+  it("preserves the requested path in the auth redirect", () => {
+    renderGate(createAuthValue({ status: "signedOut" }), "/account?tab=profile");
+
+    expect(screen.getByTestId("auth-search").textContent).toBe(
+      "?returnTo=%2Faccount%3Ftab%3Dprofile",
+    );
   });
 
   it("renders protected content for a signed-in user", () => {

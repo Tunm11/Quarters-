@@ -165,8 +165,10 @@ applied correction revoking `EXECUTE` from `PUBLIC`, `anon`, and `authenticated`
 
 **These migrations have already been applied to the remote project.** The files
 remain the source of truth for reproducibility: future schema changes must ship
-as new migrations. Database types are still hand-maintained until they are
-regenerated from the remote schema.
+as new migrations. Database types are still hand-maintained: regeneration needs
+the Supabase CLI or a database/management credential, neither of which is
+available in this workspace. The write aliases are deliberately narrower than
+the full column list to match the applied column-level grants.
 
 ## Project structure
 
@@ -199,11 +201,13 @@ Tokens live in `src/styles/index.css` under Tailwind's `@theme` block:
 
 ## Testing
 
-`bun run test` runs 29 focused tests covering configuration parsing and missing
+`bun run test` runs 45 focused tests covering configuration parsing and missing
 keys, auth error mapping and validation, return-path sanitization, protected
-route states, single-subscription auth handling, sign-in failure reporting, and
-the email-confirmation sign-up path. Live sign-up/sign-in against the real
-Supabase project is not exercised by these tests.
+route states and return-path preservation, single-subscription auth handling,
+session restoration, sign-in/sign-out failure reporting, the email-confirmation
+sign-up path, profile bootstrap and duplicate handling, and profile-update
+error handling. Live sign-up/sign-in and cross-account database isolation are
+not exercised by these tests.
 
 ## Accessibility foundations
 

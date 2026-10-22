@@ -31,9 +31,10 @@
    decisions for later stages.
 6. **Implicit-flow confirmation links.** `detectSessionInUrl` is enabled so the
    default Supabase email-confirmation redirect establishes a session. Sign-up
-   passes `emailRedirectTo` as `<origin>/auth`. The project's Site URL and
-   allowed redirect URLs still need to include the deployed origin (and the
-   preview origin while testing).
+   passes `emailRedirectTo` as `<origin>/auth`. The project owner later set the
+   Site URL to the managed preview and allow-listed the preview and localhost
+   `/auth` URLs. That configuration is owner-verified; this environment cannot
+   read the Auth URL settings independently.
 
 ## Migration (applied)
 
@@ -99,6 +100,23 @@ by its own repository file; it was not erased or edited.
 - Sign-out calls `supabase.auth.signOut()` and only navigates away after
   Supabase reports no error.
 
+## Live authentication and profile verification
+
+The project owner manually exercised the real flow in the managed preview and
+reported these passes: sign-up with a real inbox, confirmation-link return,
+session establishment, protected `/account` access, profile creation and load,
+display-name save, refresh while signed in, sign-out, and post-sign-out
+redirect to sign-in. The agent did not create a user or send an email, and did
+not independently reproduce those steps.
+
+The live Auth settings endpoint was read with the publishable key: HTTP 200,
+`disable_signup: false`, `mailer_autoconfirm: false` (confirmation required),
+and `external.email: true`. An anonymous `GET /rest/v1/profiles?select=id&limit=1`
+returned HTTP 401 with PostgreSQL `42501` (`permission denied for table
+profiles`); no rows were returned. The Site URL, redirect allow-list, email
+template, policies, grants, trigger definition, and security advisors could not
+be read without Dashboard or management/database credentials.
+
 ## Configuration behaviour
 
 - Both variables are typed in `src/vite-env.d.ts`.
@@ -124,8 +142,9 @@ Created:
 - `src/lib/auth-errors.ts`, `src/lib/auth-errors.test.ts`
 - `src/lib/return-to.ts`, `src/lib/return-to.test.ts`
 - `src/auth/auth-provider.tsx`, `src/auth/auth-provider.test.tsx`,
+  `src/auth/auth-provider-session.test.tsx`,
   `src/auth/auth-provider-unconfigured.test.tsx`
-- `src/auth/profile.ts`
+- `src/auth/profile.ts`, `src/auth/profile.test.ts`
 - `src/auth/require-auth.tsx`, `src/auth/require-auth.test.tsx`
 - `src/auth/use-auth.ts`
 - `src/components/auth/password-field.tsx`
@@ -135,6 +154,13 @@ Created:
 - `src/test/setup.ts`
 - `vitest.config.ts`
 - `docs/stage-1.md`
+
+Modified in the verification pass:
+
+- `src/lib/database.types.ts` (write aliases narrowed to the column-level grants;
+  official regeneration remains blocked)
+- `src/auth/require-auth.test.tsx` (return-path preservation coverage)
+- `README.md`, `docs/stage-1.md` (verification results and remaining blockers)
 
 Modified:
 
@@ -152,10 +178,14 @@ Modified:
 
 | Command | Result |
 | --- | --- |
-| `bun tsc -b --noEmit` | Exit 0 |
-| `bun run test` | 7 files, 29 tests passed |
+| `bun run typecheck` | Exit 0 |
+| `bun run test` | 9 files, 45 tests passed |
 | `bun run build` | Exit 0; static output in `dist/` |
 | `bun run check:supabase` | Both variables set (publishable key); auth health HTTP 200 |
+| Live `GET /auth/v1/settings` | HTTP 200; sign-ups and email provider enabled; email confirmation required |
+| Anonymous `GET /rest/v1/profiles` | HTTP 401, `42501`; no rows read |
+| Supabase type generation | **BLOCKED** — no CLI, database URL, management token, or service-role key |
+| Security/performance advisors | **BLOCKED** — requires Dashboard or Management API access |
 | HTTP `GET /`, `/auth`, `/auth?mode=signup`, `/account`, `/explore`, and the auth/account/client modules on the dev server | All 200 |
 | `freebuff-preview restart` | Preview ready and listening on 5173 |
 | Anonymous `GET /rest/v1/profiles?select=id&limit=1` after the owner applied the migration | HTTP 401, code `42501`; table present, anonymous access denied, no rows read |
@@ -163,10 +193,14 @@ Modified:
 ## Live Supabase operations actually performed
 
 - `GET {project}/auth/v1/health` with the publishable key: **HTTP 200**.
+- `GET {project}/auth/v1/settings` with the publishable key: **HTTP 200**;
+  `disable_signup: false`, `mailer_autoconfirm: false`, `external.email: true`.
 - After the project owner applied the migration, a read-only anonymous request to
   `/rest/v1/profiles?select=id&limit=1` returned **HTTP 401** with PostgreSQL
   code `42501` (`permission denied for table profiles`). This confirms the table
   exists and anonymous access is denied; no rows were returned or written.
+- The owner separately performed the live sign-up, confirmation, session,
+  profile, save, refresh, and sign-out flow in the managed preview.
 - No sign-up, sign-in, table creation, migration application, or database write
   was performed by the agent.
 
@@ -180,16 +214,26 @@ Modified:
    historical artifact unless the database owner later decides otherwise with
    the official Supabase CLI, after a backup and explicit approval. Do not edit
    `schema_migrations` by hand.
-2. **Configure redirect URLs** in Supabase Auth (Site URL plus the app origin and
-   preview origin) so confirmation links return to the app.
-3. **Regenerate database types** from the applied schema and replace the
-   hand-maintained `src/lib/database.types.ts`.
-4. **Live auth and profile verification** with a real test account is still
-   pending; it requires an inbox for the confirmation link and a signed-in
-   session. The policy behaviour has not been exercised with an authenticated
-   role.
-5. **Not built in this stage:** password reset, email change, avatar uploads,
+2. **Redirect URLs are owner-configured, not independently read.** The Site URL
+   is the managed preview and the allow-list contains the preview and localhost
+   `/auth` URLs. This environment cannot read those settings, so their current
+   values remain owner-verified only.
+3. **Regenerate database types.** `src/lib/database.types.ts` is still
+   hand-maintained. Official generation is blocked without the Supabase CLI or a
+   database/management credential. The file's write aliases were narrowed to
+   the applied column-level grants, but the full generated `Database` structure
+   and PostgREST version are still missing.
+4. **Cross-account isolation is not tested.** The live owner flow exercised one
+   account. No second safe test identity or isolated test project is available,
+   so one identity reading or updating another's profile has not been exercised.
+   The policies are present in the migration, but that is not a substitute for a
+   two-identity test.
+5. **Leaked password protection remains unverified.** A previous live security
+   advisor reported `auth_leaked_password_protection` disabled. This environment
+   cannot run the advisor or change Auth settings; the warning should be
+   re-checked in the Dashboard and, if still present, enabled there.
+6. **Not built in this stage:** password reset, email change, avatar uploads,
    onboarding fields (campus, budget, preferences), account deletion, and any
    listing/roommate schema. Those need product decisions, not scaffolding.
-6. **No deploy was performed.** The migration was applied by the project owner
-   outside this agent run, not by the agent.
+7. **No deploy was performed.** The migration and live Auth flow were handled by
+   the project owner outside this agent run, not by the agent.
