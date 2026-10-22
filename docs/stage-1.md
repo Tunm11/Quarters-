@@ -68,7 +68,7 @@ schema directly; the repository mapping below follows the owner-verified state.
 | --- | --- | --- |
 | `20261022145520` | `create_profiles` | `20261022145520_create_profiles.sql` |
 | `20261022150450` | `revoke_profiles_trigger_function_api_execute` | `20261022150450_revoke_profiles_trigger_function_api_execute.sql` |
-| `20261022150455` | `revoke_profiles_trigger_function_api_execute` | None — duplicate live entry, intentionally not recreated |
+| `20261022150455` | `revoke_profiles_trigger_function_api_execute` | `20261022150455_revoke_profiles_trigger_function_api_execute.sql` |
 
 The original repository file was named
 `20261022120000_create_profiles.sql`. It was renamed to the applied version so
@@ -79,8 +79,8 @@ the forward privilege migration may be re-applied to production.
 The baseline file keeps the original schema SQL. Its trigger-function `REVOKE`
 and the forward privilege migration both target the same final privilege state;
 they are idempotent, and the live project has already executed the correction.
-The duplicate `20261022150455` entry was not erased, edited, or recreated as a
-second migration.
+The duplicate `20261022150455` entry is preserved in live history and represented
+by its own repository file; it was not erased or edited.
 
 ## Authentication behaviour
 
@@ -115,6 +115,7 @@ Created:
 
 - `supabase/migrations/20261022145520_create_profiles.sql` (renamed from `20261022120000_...`)
 - `supabase/migrations/20261022150450_revoke_profiles_trigger_function_api_execute.sql`
+- `supabase/migrations/20261022150455_revoke_profiles_trigger_function_api_execute.sql`
 - `scripts/check-supabase.mjs`
 - `src/vite-env.d.ts`
 - `src/lib/supabase.ts`, `src/lib/supabase-config.ts`,
@@ -173,10 +174,11 @@ Modified:
 
 1. **Duplicate live migration entry.** Supabase history contains both
    `20261022150450` and `20261022150455` for
-   `revoke_profiles_trigger_function_api_execute`. Only the `...450` version has
-   a repository file; the duplicate was not erased or recreated. Decide whether
-   to leave it as a historical artifact or reconcile it later with the official
-   Supabase CLI, after a backup and explicit approval. Do not edit
+   `revoke_profiles_trigger_function_api_execute`. The repository now has a file
+   for each version, and the `...455` file reproduces the recorded duplicate
+   statement. The live history row was not erased or edited. Leave it as a
+   historical artifact unless the database owner later decides otherwise with
+   the official Supabase CLI, after a backup and explicit approval. Do not edit
    `schema_migrations` by hand.
 2. **Configure redirect URLs** in Supabase Auth (Site URL plus the app origin and
    preview origin) so confirmation links return to the app.

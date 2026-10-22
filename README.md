@@ -136,12 +136,14 @@ Applied Supabase migration history:
 | --- | --- | --- |
 | `20261022145520` | `create_profiles` | `supabase/migrations/20261022145520_create_profiles.sql` |
 | `20261022150450` | `revoke_profiles_trigger_function_api_execute` | `supabase/migrations/20261022150450_revoke_profiles_trigger_function_api_execute.sql` |
-| `20261022150455` | `revoke_profiles_trigger_function_api_execute` | None — duplicate live history entry, intentionally not recreated |
+| `20261022150455` | `revoke_profiles_trigger_function_api_execute` | `supabase/migrations/20261022150455_revoke_profiles_trigger_function_api_execute.sql` |
 
 The baseline file was renamed from `20261022120000_create_profiles.sql` to
 match the applied version. Renaming a file does not change database history.
 All three versions are already applied, so they must not be re-run, and
-migration history must not be edited by hand.
+migration history must not be edited by hand. The `...455` file reproduces the
+recorded statement of the duplicate live entry; it documents existing history
+and is not a new database change.
 
 `supabase/migrations/20261022145520_create_profiles.sql` creates
 `public.profiles`, enables row-level security, and defines own-row select /
