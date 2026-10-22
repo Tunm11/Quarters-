@@ -30,7 +30,7 @@ export function BottomNav() {
                 }
               >
                 <Icon className="size-5" aria-hidden="true" />
-                <span>{item.label}</span>
+                <span className="text-center leading-tight">{item.label}</span>
               </NavLink>
             </li>
           );

@@ -1,4 +1,4 @@
-import { Compass, House, Info, type LucideIcon } from "lucide-react";
+import { Compass, House, Info, UserRound, type LucideIcon } from "lucide-react";
 
 export type NavItem = {
   to: string;
@@ -13,4 +13,5 @@ export const navItems: NavItem[] = [
   { to: "/", label: "Home", icon: House, end: true },
   { to: "/explore", label: "Explore", icon: Compass },
   { to: "/how-it-works", label: "How it works", icon: Info },
+  { to: "/account", label: "Account", icon: UserRound },
 ];

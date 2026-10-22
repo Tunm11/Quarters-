@@ -23,11 +23,17 @@ export function SiteFooter() {
           >
             How it works
           </Link>
+          <Link to="/account" className="text-muted transition-colors hover:text-foreground">
+            Account
+          </Link>
         </nav>
 
         <div className="flex flex-col gap-1.5 text-xs text-subtle">
-          <p className="font-medium text-muted">Stage 0 — Foundation</p>
-          <p>UI shell only. No live listings, accounts, or payments yet.</p>
+          <p className="font-medium text-muted">Stage 1 — Accounts</p>
+          <p>
+            Email accounts are handled by Supabase Auth. No listings or payments
+            yet; the profiles migration awaits review.
+          </p>
           <p>© {new Date().getFullYear()} QUARTERS</p>
         </div>
       </div>

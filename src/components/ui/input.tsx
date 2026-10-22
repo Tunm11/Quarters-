@@ -6,7 +6,11 @@ export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className"
   /** Visually hide the label while keeping it available to screen readers. */
   hideLabel?: boolean;
   description?: string;
+  /** Field-level error; announced and reflected in the input's styling. */
+  error?: string;
   icon?: ReactNode;
+  /** Control rendered inside the field's right edge, e.g. a password toggle. */
+  trailing?: ReactNode;
   className?: string;
   inputClassName?: string;
 };
@@ -15,7 +19,9 @@ export function Input({
   label,
   hideLabel = false,
   description,
+  error,
   icon,
+  trailing,
   className,
   inputClassName,
   id,
@@ -24,6 +30,8 @@ export function Input({
   const generatedId = useId();
   const inputId = id ?? generatedId;
   const descriptionId = description ? `${inputId}-description` : undefined;
+  const errorId = error ? `${inputId}-error` : undefined;
+  const describedBy = [descriptionId, errorId].filter(Boolean).join(" ") || undefined;
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
@@ -47,18 +55,28 @@ export function Input({
         )}
         <input
           id={inputId}
-          aria-describedby={descriptionId}
+          aria-describedby={describedBy}
+          aria-invalid={error ? true : undefined}
           className={cn(
-            "h-12 w-full rounded-tile border border-line bg-panel text-sm text-foreground transition-colors placeholder:text-subtle hover:border-line-strong focus-visible:border-accent/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft disabled:cursor-not-allowed disabled:opacity-55",
-            icon ? "pr-4 pl-11" : "px-4",
+            "h-12 w-full rounded-tile border bg-panel text-sm text-foreground transition-colors placeholder:text-subtle hover:border-line-strong focus-visible:border-accent/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft disabled:cursor-not-allowed disabled:opacity-55",
+            error ? "border-danger/60" : "border-line",
+            trailing ? "pr-12" : icon ? "pr-4 pl-11" : "px-4",
             inputClassName,
           )}
           {...rest}
         />
+        {trailing && (
+          <div className="absolute top-1/2 right-1 -translate-y-1/2">{trailing}</div>
+        )}
       </div>
       {description && (
         <p id={descriptionId} className="text-xs text-subtle">
           {description}
+        </p>
+      )}
+      {error && (
+        <p id={errorId} role="alert" className="text-xs text-danger">
+          {error}
         </p>
       )}
     </div>

@@ -6,9 +6,11 @@ import {
   Circle,
   Compass,
   Info,
+  LogIn,
   MapPin,
   Search,
   ShieldCheck,
+  UserPlus,
   UsersRound,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -57,12 +59,12 @@ const readyNow = [
   "Dark design token system and Poppins typography",
   "Accessible buttons, inputs, badges, and surfaces",
   "Loading, empty, and error state foundations",
-  "Client-side routing with a real 404",
+  "Email and password accounts through Supabase Auth",
+  "Session-aware protected account route with sign-out",
 ];
 
 const notBuiltYet = [
-  "Supabase connection and database tables",
-  "Accounts and sign-in",
+  "Profiles migration approval (SQL written, not applied)",
   "Live listings and roommate matching",
   "Viewing requests, messaging, and payments",
 ];
@@ -151,7 +153,7 @@ export default function LandingPage() {
           <div className="flex flex-col gap-6">
             <Badge tone="accent" className="w-fit">
               <span aria-hidden="true" className="size-1.5 rounded-full bg-accent" />
-              Stage 0 · Foundation
+              Stage 1 · Accounts
             </Badge>
 
             <h1 className="text-[2.5rem] leading-[1.04] font-semibold tracking-tight text-balance sm:text-6xl">
@@ -189,8 +191,8 @@ export default function LandingPage() {
 
             <p className="flex max-w-lg items-start gap-2 text-xs leading-relaxed text-subtle">
               <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-              Honest status: accounts and listings arrive in later stages.
-              Nothing on this page is a live listing.
+              Honest status: accounts run on real Supabase Auth. Listings and
+              the profiles migration are still pending review.
             </p>
           </div>
 
@@ -336,8 +338,9 @@ export default function LandingPage() {
               ))}
             </ul>
             <p className="mt-auto text-xs leading-relaxed text-subtle">
-              Supabase is the intended backend and will be connected in its own
-              stage. No database, authentication, or API is wired up yet.
+              Supabase is connected for authentication only. The profiles
+              migration is written and awaiting review; no listings, messaging,
+              or payments are wired up yet.
             </p>
           </Panel>
         </div>
@@ -354,33 +357,36 @@ export default function LandingPage() {
               id="cta-heading"
               className="max-w-xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl"
             >
-              Rooms open soon. The shell is ready now.
+              Create your account. Rooms are next.
             </h2>
             <p className="max-w-lg text-sm leading-relaxed text-muted">
-              Walk through the Explore shell to see the layout, filters, and
-              states that real listings will drop into.
+              Sign up with email and password. Supabase issues and confirms the
+              account; listings arrive after the profiles migration is reviewed
+              and applied.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
-                to="/explore"
+                to="/auth?mode=signup"
                 className={buttonClasses({ size: "lg", className: "w-full sm:w-auto" })}
               >
-                <Compass className="size-4" aria-hidden="true" />
-                Open Explore
+                <UserPlus className="size-4" aria-hidden="true" />
+                Create account
               </Link>
               <Link
-                to="/how-it-works"
+                to="/auth"
                 className={buttonClasses({
                   variant: "secondary",
                   size: "lg",
                   className: "w-full sm:w-auto",
                 })}
               >
-                See the stage scope
+                <LogIn className="size-4" aria-hidden="true" />
+                Sign in
               </Link>
             </div>
             <p className="text-xs text-subtle">
-              Accounts and saved rooms arrive after the Supabase foundation stage.
+              Real Supabase Auth. No mock accounts, sample sessions, or fallback
+              data.
             </p>
           </div>
         </div>

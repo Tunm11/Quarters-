@@ -6,6 +6,7 @@ import {
   DoorOpen,
   MessageSquare,
   ShieldCheck,
+  UserPlus,
   UsersRound,
   Wallet,
 } from "lucide-react";
@@ -40,14 +41,15 @@ const studentFlow = [
 const currentScope = [
   "A mobile-first React application shell with routing",
   "Design tokens for the dark QUARTERS interface",
-  "Reusable, accessible UI primitives",
-  "Loading, empty, and error state foundations",
-  "Documented preview and build commands",
+  "Reusable, accessible UI primitives and state foundations",
+  "Email/password accounts through Supabase Auth",
+  "A protected account route that waits for the session check",
+  "A profiles migration, written and awaiting review",
 ];
 
 const laterStages = [
-  { icon: DoorOpen, label: "Supabase schema and listings" },
-  { icon: UsersRound, label: "Student accounts and roommate matching" },
+  { icon: DoorOpen, label: "Profile onboarding and listing data" },
+  { icon: UsersRound, label: "Roommate matching" },
   { icon: MessageSquare, label: "Viewing requests and messaging" },
   { icon: CreditCard, label: "Payments and rent tracking" },
 ];
@@ -57,7 +59,7 @@ export default function HowItWorksPage() {
     <div className="mx-auto w-full max-w-4xl px-5 py-10 sm:px-8 sm:py-14">
       <div className="flex flex-col gap-4">
         <Badge tone="accent" className="w-fit">
-          Stage 0 · Foundation
+          Stage 1 · Accounts
         </Badge>
         <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
           How QUARTERS will work
@@ -133,20 +135,27 @@ export default function HowItWorksPage() {
         </div>
         <p className="text-xs leading-relaxed text-subtle">
           There is no mock backend, no simulated sign-in, and no hidden data
-          layer in this build. Supabase will be connected in its own dedicated
-          stage, with schema and access rules reviewed before any real listing
-          is shown.
+          layer in this build. Supabase is connected for authentication only.
+          The profiles migration is written and awaiting review, so profile rows
+          read or written from the app fail loudly until it is applied.
         </p>
       </section>
 
-      <div className="mt-12 flex flex-col gap-3 border-t border-line pt-8 sm:flex-row sm:items-center">
-        <Link to="/explore" className={buttonClasses({ size: "md" })}>
+      <div className="mt-12 flex flex-col gap-3 border-t border-line pt-8 sm:flex-row sm:flex-wrap sm:items-center">
+        <Link to="/auth?mode=signup" className={buttonClasses({ size: "md" })}>
+          <UserPlus className="size-4" aria-hidden="true" />
+          Create account
+        </Link>
+        <Link
+          to="/explore"
+          className={buttonClasses({ variant: "secondary", size: "md" })}
+        >
           <Compass className="size-4" aria-hidden="true" />
           Open Explore
         </Link>
         <Link
           to="/"
-          className={buttonClasses({ variant: "secondary", size: "md" })}
+          className={buttonClasses({ variant: "ghost", size: "md" })}
         >
           Back to home
           <ArrowRight className="size-4" aria-hidden="true" />
