@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+/*
+ * QUARTERS design tokens.
+ *
+ * Single source of truth for the interface. Components consume the generated
+ * utilities (bg-canvas, text-muted, border-line, rounded-card, ...) instead of
+ * hard-coded colours so the theme stays consistent as the product grows.
+ */
+@theme {
+  --font-sans:
+    "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+
+  /* Surfaces: charcoal layers, deepest page to highest raised panel. */
+  --color-canvas: #0a0a0d;
+  --color-canvas-soft: #0f0f14;
+  --color-panel: #141319;
+  --color-panel-raised: #1b1a22;
+  --color-panel-hover: #211f2a;
+
+  /* Text: soft white down to muted grey. */
+  --color-foreground: #f5f3fa;
+  --color-muted: #a6a1b3;
+  --color-subtle: #837d92;
+
+  /* Borders: subtle hairlines, with one stronger step for emphasis. */
+  --color-line: rgb(245 243 250 / 0.09);
+  --color-line-strong: rgb(245 243 250 / 0.18);
+
+  /* Restrained purple accent. */
+  --color-accent: #8f7bf6;
+  --color-accent-strong: #7b64ee;
+  --color-accent-soft: #c8beff;
+  --color-accent-ink: #0b0913;
+
+  /* Semantic feedback colours, kept muted to fit the dark interface. */
+  --color-positive: #6fd6a8;
+  --color-caution: #e8c98a;
+  --color-danger: #f3a3a3;
+
+  /* Rounded surfaces. */
+  --radius-tile: 0.875rem;
+  --radius-card: 1.5rem;
+  --radius-sheet: 2rem;
+  --radius-pill: 999px;
+
+  /* Depth. */
+  --shadow-panel: 0 24px 60px -32px rgb(0 0 0 / 0.9);
+  --shadow-float: 0 18px 40px -24px rgb(0 0 0 / 0.85);
+  --shadow-accent: 0 18px 45px -25px rgb(143 123 246 / 0.65);
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--color-canvas);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Consistent, clearly visible keyboard focus everywhere. */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-accent-soft);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+
+  ::selection {
+    background-color: rgb(143 123 246 / 0.35);
+    color: var(--color-foreground);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background-color: var(--color-canvas);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--color-panel-raised);
+    border: 2px solid var(--color-canvas);
+    border-radius: var(--radius-pill);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Keyboard-only "skip to content" link. */
+  .skip-link {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 100;
+    translate: 0 -200%;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-accent);
+    color: var(--color-accent-ink);
+    padding: 0.625rem 1.125rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: translate 150ms ease;
+  }
+
+  .skip-link:focus-visible {
+    translate: 0 0;
+  }
+}
+
+/* Faint blueprint grid used behind hero sections. */
+@utility bg-grid {
+  background-image:
+    linear-gradient(to right, rgb(245 243 250 / 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(245 243 250 / 0.04) 1px, transparent 1px);
+  background-size: 72px 72px;
+}
+
+/* Soft purple glow used sparingly for focal points. */
+@utility bg-glow {
+  background-image: radial-gradient(
+    60% 60% at 50% 0%,
+    rgb(143 123 246 / 0.22) 0%,
+    transparent 70%
+  );
+}
+
+/* Fades long edges into the canvas. */
+@utility mask-fade-b {
+  mask-image: linear-gradient(to bottom, black 65%, transparent 100%);
+}
