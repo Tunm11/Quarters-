@@ -10,6 +10,14 @@
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
     "test:db": "bun scripts/verify-listings-rls.mjs",
+    "test:alerts": "bun scripts/verify-saved-room-alerts.mjs",
+    "test:searches": "bun scripts/verify-saved-searches.mjs",
+    "test:trust": "bun scripts/verify-listing-trust.mjs",
+    "test:safety": "bun scripts/verify-safety-notifications.mjs",
+    "test:reporting": "bun scripts/verify-safety-reporting.mjs",
+    "test:account": "bun scripts/verify-account-management.mjs",
+    "test:sessions": "bun scripts/verify-session-management.mjs",
+    "test:offline-worker": "bun scripts/verify-offline-worker.mjs",
     "check:supabase": "bun scripts/check-supabase.mjs"
   },
   "dependencies": {

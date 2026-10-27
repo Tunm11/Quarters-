@@ -11,13 +11,37 @@ const signedOutValue: AuthContextValue = {
   profile: null,
   profileStatus: "idle",
   profileError: null,
+  avatarUrl: null,
   configProblem: null,
   configMissingKeys: [],
   sessionError: null,
+  passwordRecovery: false,
   signIn: async () => ({ error: null }),
-  signUp: async () => ({ error: null, requiresEmailConfirmation: false }),
+  signUp: async () => ({
+    error: null,
+    requiresEmailConfirmation: false,
+    alreadyRegistered: false,
+  }),
+  confirmSignUp: async () => ({ error: null }),
+  resendConfirmation: async () => ({ error: null }),
+  sendEmailCode: async () => ({ error: null }),
+  verifyEmailCode: async () => ({ error: null }),
+  requestPasswordReset: async () => ({ error: null }),
+  verifyRecoveryCode: async () => ({ error: null }),
+  clearPasswordRecovery: () => {},
   signOut: async () => ({ error: null }),
+  signOutOthers: async () => ({ error: null }),
+  signOutEverywhere: async () => ({ error: null }),
+  updatePassword: async () => ({ error: null }),
   saveDisplayName: async () => ({ error: null }),
+  changeEmail: async () => ({
+    error: null,
+    changedImmediately: false,
+    pendingEmail: null,
+  }),
+  uploadAvatar: async () => ({ error: null }),
+  removeAvatar: async () => ({ error: null }),
+  deleteAccount: async () => ({ error: null }),
   retryProfile: () => {},
 };
 
@@ -55,6 +79,30 @@ describe("AuthPage", () => {
 
     expect(screen.getByText("Create your account")).toBeTruthy();
     expect(screen.getByLabelText("Display name (optional)")).toBeTruthy();
+  });
+
+  it("opens the forgot-password request from sign-in", () => {
+    renderAuthPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "Forgot password?" }));
+
+    expect(
+      screen.getByRole("form", { name: "Password reset request form" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Send reset email" })).toBeTruthy();
+  });
+
+  it("offers passwordless sign-in with an emailed one-time code", () => {
+    renderAuthPage();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sign in with a one-time code" }),
+    );
+
+    expect(
+      screen.getByRole("form", { name: "Email code sign-in form" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Email me a code" })).toBeTruthy();
   });
 
   it("offers an accessible password visibility toggle", () => {

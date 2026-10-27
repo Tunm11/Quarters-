@@ -54,11 +54,19 @@ export function mapAuthError(error: AuthError): string {
     case "invalid_credentials":
       return "Email or password is incorrect.";
     case "email_not_confirmed":
-      return "This email is not confirmed yet. Open the confirmation link Supabase sent you, then sign in.";
+      return "This email is not confirmed yet. Use the confirmation link or code Supabase emailed you, then sign in.";
+    case "otp_expired":
+      return "That confirmation code is wrong or has expired. Send a new one and use the latest email.";
     case "user_already_exists":
       return "An account with this email already exists. Sign in instead.";
     case "weak_password":
       return `That password is too weak. Use at least ${MIN_PASSWORD_LENGTH} characters.`;
+    case "same_password":
+      return "Choose a password you have not used on this account before.";
+    case "reauthentication_needed":
+      return "For security, sign in again before changing your password.";
+    case "otp_disabled":
+      return "Email code sign-in is not enabled for this Supabase project. Sign in with your password instead.";
     case "over_email_send_rate_limit":
     case "over_request_rate_limit":
       return "Too many attempts in a short time. Wait a moment, then try again.";
@@ -72,6 +80,11 @@ export function mapAuthError(error: AuthError): string {
     case "validation_failed":
       return "Supabase rejected that email or password. Check the format and try again.";
     default:
+      // GoTrue answers a one-time code request for an unknown address with
+      // "Signups not allowed for otp" because the request never creates users.
+      if (/signups? not allowed/i.test(error.message ?? "")) {
+        return "No account uses that email yet. Create an account first.";
+      }
       return error.message
         ? `Supabase could not complete that request: ${error.message}`
         : "Supabase could not complete that request. Please try again.";

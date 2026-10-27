@@ -42,7 +42,6 @@ export function PasswordField({
           label={visible ? "Hide password" : "Show password"}
           onClick={() => setVisible((current) => !current)}
           disabled={disabled}
-          className="size-9"
         >
           {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
         </IconButton>

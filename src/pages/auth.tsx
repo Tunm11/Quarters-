@@ -1,18 +1,21 @@
 import {
   ArrowLeft,
+  KeyRound,
   LogIn,
   MailCheck,
+  RotateCw,
   ShieldCheck,
-  TriangleAlert,
   UserPlus,
 } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/use-auth";
+import { EmailCodeSignIn } from "@/components/auth/email-code-sign-in";
 import { PasswordField } from "@/components/auth/password-field";
+import { PasswordResetRequest } from "@/components/auth/password-reset-request";
 import { SupabaseConfigNotice } from "@/components/auth/supabase-config-notice";
+import { InlineAlert } from "@/components/feedback/inline-alert";
 import { LoadingState } from "@/components/feedback/loading-state";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
@@ -25,10 +28,23 @@ import {
 import { cn } from "@/lib/cn";
 import { safeReturnTo } from "@/lib/return-to";
 
-type Mode = "signIn" | "signUp";
+/**
+ * `code` and `forgot` are secondary panels reached from the sign-in form; the
+ * segmented control only ever reflects `signIn` / `signUp`.
+ */
+type Mode = "signIn" | "signUp" | "code" | "forgot";
+
+type PendingConfirmation = {
+  email: string;
+  /** Supabase sent no email because the address already has an account. */
+  alreadyRegistered: boolean;
+};
+
+const RESEND_COOLDOWN_SECONDS = 60;
 
 export default function AuthPage() {
-  const { status, signIn, signUp, sessionError } = useAuth();
+  const { status, signIn, signUp, confirmSignUp, resendConfirmation, sessionError } =
+    useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnTo = safeReturnTo(searchParams.get("returnTo"));
@@ -41,8 +57,16 @@ export default function AuthPage() {
   const [displayName, setDisplayName] = useState("");
   const [fieldErrors, setFieldErrors] = useState<AuthFieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
+  const [pendingConfirmation, setPendingConfirmation] =
+    useState<PendingConfirmation | null>(null);
   const [pending, setPending] = useState(false);
+  const [code, setCode] = useState("");
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendError, setResendError] = useState<string | null>(null);
+  const [resendNotice, setResendNotice] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
     if (status === "signedIn") {
@@ -50,11 +74,25 @@ export default function AuthPage() {
     }
   }, [status, navigate, returnTo]);
 
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = window.setTimeout(
+      () => setResendCooldown((seconds) => Math.max(0, seconds - 1)),
+      1000,
+    );
+    return () => window.clearTimeout(timer);
+  }, [resendCooldown]);
+
   function switchMode(nextMode: Mode) {
     setMode(nextMode);
     setFieldErrors({});
     setFormError(null);
-    setConfirmationEmail(null);
+    setPendingConfirmation(null);
+    setCode("");
+    setCodeError(null);
+    setResendError(null);
+    setResendNotice(null);
+    setResendCooldown(0);
     setPassword("");
   }
 
@@ -64,7 +102,7 @@ export default function AuthPage() {
 
     const errors: AuthFieldErrors = {
       email: validateEmail(email),
-      password: validatePassword(password, mode),
+      password: validatePassword(password, mode === "signUp" ? "signUp" : "signIn"),
     };
     if (mode === "signUp") {
       errors.displayName = validateDisplayName(displayName);
@@ -94,10 +132,50 @@ export default function AuthPage() {
         return;
       }
       if (result.requiresEmailConfirmation) {
-        setConfirmationEmail(email.trim());
+        setPendingConfirmation({
+          email: email.trim(),
+          alreadyRegistered: result.alreadyRegistered,
+        });
+        setResendCooldown(RESEND_COOLDOWN_SECONDS);
+      } else if (result.alreadyRegistered) {
+        setPendingConfirmation({ email: email.trim(), alreadyRegistered: true });
       }
     } finally {
       setPending(false);
+    }
+  }
+
+  async function handleVerifyCode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!pendingConfirmation) return;
+    setCodeError(null);
+    setVerifying(true);
+    try {
+      const result = await confirmSignUp(pendingConfirmation.email, code);
+      if (result.error) {
+        setCodeError(result.error);
+      }
+      // On success the auth listener flips the status and the effect navigates.
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  async function handleResend() {
+    if (!pendingConfirmation) return;
+    setResendError(null);
+    setResendNotice(null);
+    setResending(true);
+    try {
+      const result = await resendConfirmation(pendingConfirmation.email);
+      if (result.error) {
+        setResendError(result.error);
+        return;
+      }
+      setResendNotice("Confirmation email sent again. Check your inbox and spam folder.");
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+    } finally {
+      setResending(false);
     }
   }
 
@@ -122,35 +200,35 @@ export default function AuthPage() {
   }
 
   const isSignUp = mode === "signUp";
+  const segmentedMode = isSignUp ? "signUp" : "signIn";
   const visibleError = formError ?? sessionError;
 
   return (
     <div className="mx-auto grid w-full max-w-5xl gap-10 px-5 py-12 sm:px-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:py-16">
       <div className="order-2 flex flex-col gap-5 lg:order-1">
-        <Badge tone="accent" className="w-fit">
-          Stage 1 · Accounts
-        </Badge>
+        <p className="text-[11px] font-medium tracking-[0.18em] text-sand uppercase">
+          Your QUARTERS account
+        </p>
         <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
           One account for rooms and roommates.
         </h1>
         <p className="max-w-md text-sm leading-relaxed text-muted sm:text-base">
-          Your QUARTERS account is a real Supabase Auth account. There are no mock
-          sessions, shared demo logins, or prefilled credentials.
+          Sign in once and your profile follows you across QUARTERS. One email
+          and password is all it takes.
         </p>
         <ul className="flex max-w-md flex-col gap-3 text-sm text-muted">
           <li className="flex items-start gap-2.5">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-accent-soft" aria-hidden="true" />
-            Sessions are issued and refreshed by Supabase and persist across
-            reloads.
+            Your session stays on your device and persists across reloads.
           </li>
           <li className="flex items-start gap-2.5">
             <MailCheck className="mt-0.5 size-4 shrink-0 text-accent-soft" aria-hidden="true" />
-            If email confirmation is enabled, you will be asked to confirm before
-            a session exists.
+            If email confirmation is on, enter the code from the confirmation
+            email before signing in.
           </li>
           <li className="flex items-start gap-2.5">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-accent-soft" aria-hidden="true" />
-            Profile access is limited to your own row by row-level security.
+            Your profile is private — only you can see it.
           </li>
         </ul>
         <Link
@@ -158,7 +236,7 @@ export default function AuthPage() {
           className="inline-flex w-fit items-center gap-1.5 text-sm text-subtle transition-colors hover:text-foreground"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
-          Back to QUARTERS
+          Back to home
         </Link>
       </div>
 
@@ -177,12 +255,12 @@ export default function AuthPage() {
             <button
               key={option.value}
               type="button"
-              aria-pressed={mode === option.value}
+              aria-pressed={segmentedMode === option.value}
               disabled={pending}
               onClick={() => switchMode(option.value)}
               className={cn(
                 "h-10 rounded-pill text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60",
-                mode === option.value
+                segmentedMode === option.value
                   ? "bg-accent text-accent-ink"
                   : "text-muted hover:bg-panel hover:text-foreground",
               )}
@@ -192,34 +270,115 @@ export default function AuthPage() {
           ))}
         </div>
 
-        {confirmationEmail ? (
+        {mode === "code" ? (
+          <EmailCodeSignIn
+            initialEmail={email}
+            onBack={() => switchMode("signIn")}
+          />
+        ) : mode === "forgot" ? (
+          <PasswordResetRequest
+            initialEmail={email}
+            onBack={() => switchMode("signIn")}
+          />
+        ) : pendingConfirmation ? (
           <div className="flex flex-col gap-4">
             <span
               aria-hidden="true"
               className="grid size-11 place-items-center rounded-tile border border-accent/30 bg-accent/10 text-accent-soft"
             >
-              <MailCheck className="size-5" />
+              {pendingConfirmation.alreadyRegistered ? (
+                <ShieldCheck className="size-5" />
+              ) : (
+                <MailCheck className="size-5" />
+              )}
             </span>
-            <div className="flex flex-col gap-2">
-              <h2 className="text-lg font-semibold">Confirm your email</h2>
-              <p className="text-sm leading-relaxed text-muted">
-                Supabase accepted the sign-up for{" "}
-                <span className="text-foreground">{confirmationEmail}</span>.
-                This project requires email confirmation, so no session exists
-                yet. Open the confirmation link, then sign in.
-              </p>
-              <p className="text-xs leading-relaxed text-subtle">
-                If no message arrives, check the spam folder and wait a few
-                minutes before trying again. The link returns to this app.
-              </p>
+
+            {pendingConfirmation.alreadyRegistered ? (
+              <div className="flex flex-col gap-2">
+                <h2 className="text-lg font-semibold">That email already has an account</h2>
+                <p className="text-sm leading-relaxed text-muted">
+                  <span className="text-foreground">{pendingConfirmation.email}</span> is
+                  already registered, so Supabase did not send a second
+                  confirmation email. Sign in with the password you chose for it.
+                </p>
+                <p className="text-xs leading-relaxed text-subtle">
+                  If you never confirmed it, send the confirmation email again
+                  below — the link and code in it still work.
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <h2 className="text-lg font-semibold">Confirm your email</h2>
+                <p className="text-sm leading-relaxed text-muted">
+                  Supabase accepted the sign-up for{" "}
+                  <span className="text-foreground">{pendingConfirmation.email}</span>.
+                  Enter the code from that email below — no need to open the
+                  link, so you stay in the app.
+                </p>
+                <p className="text-xs leading-relaxed text-subtle">
+                  Nothing in your inbox? Check spam, give it a minute, then
+                  resend. Codes expire shortly after they are issued.
+                </p>
+              </div>
+            )}
+
+            {!pendingConfirmation.alreadyRegistered && (
+              <form
+                onSubmit={handleVerifyCode}
+                noValidate
+                aria-label="Confirm email form"
+                className="flex flex-col gap-3"
+              >
+                <Input
+                  label="Confirmation code"
+                  value={code}
+                  onChange={(event) =>
+                    setCode(event.target.value.replace(/\D/g, ""))
+                  }
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={10}
+                  placeholder="Code from the email"
+                  error={codeError ?? undefined}
+                  disabled={verifying}
+                />
+                <Button
+                  type="submit"
+                  loading={verifying}
+                  icon={<KeyRound className="size-4" />}
+                  className="w-full"
+                >
+                  Verify code
+                </Button>
+              </form>
+            )}
+
+            <div className="flex flex-col gap-2 border-t border-line pt-4">
+              {resendError && <InlineAlert>{resendError}</InlineAlert>}
+              {resendNotice && <InlineAlert tone="positive">{resendNotice}</InlineAlert>}
+              <Button
+                type="button"
+                variant="secondary"
+                icon={<RotateCw className="size-4" />}
+                loading={resending}
+                disabled={resending || resendCooldown > 0}
+                onClick={() => void handleResend()}
+                className="w-full"
+              >
+                {resendCooldown > 0
+                  ? `Resend email in ${resendCooldown}s`
+                  : "Resend confirmation email"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                icon={<ArrowLeft className="size-4" />}
+                onClick={() => switchMode("signIn")}
+                className="w-full"
+              >
+                Back to sign in
+              </Button>
             </div>
-            <Button
-              variant="secondary"
-              icon={<ArrowLeft className="size-4" />}
-              onClick={() => switchMode("signIn")}
-            >
-              Back to sign in
-            </Button>
           </div>
         ) : (
           <>
@@ -234,15 +393,7 @@ export default function AuthPage() {
               </p>
             </div>
 
-            {visibleError && (
-              <div
-                role="alert"
-                className="flex items-start gap-2 rounded-tile border border-danger/30 bg-danger/5 px-3.5 py-3 text-sm text-danger"
-              >
-                <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                <span>{visibleError}</span>
-              </div>
-            )}
+            {visibleError && <InlineAlert>{visibleError}</InlineAlert>}
 
             <form
               onSubmit={handleSubmit}
@@ -288,6 +439,19 @@ export default function AuthPage() {
                 disabled={pending}
               />
 
+              {!isSignUp && (
+                <div className="-mt-1 flex justify-end">
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => switchMode("forgot")}
+                    className="rounded-sm text-xs font-medium text-subtle transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
+
               <Button
                 type="submit"
                 loading={pending}
@@ -298,11 +462,24 @@ export default function AuthPage() {
               </Button>
             </form>
 
-            <p className="text-xs leading-relaxed text-subtle">
-              {isSignUp
-                ? "QUARTERS never receives your password. Supabase Auth handles sign-up, confirmation, and sessions."
-                : "If your email is not confirmed, Supabase will reject the sign-in until you open the confirmation link."}
-            </p>
+            {!isSignUp && (
+              <div className="flex flex-col gap-3 border-t border-line pt-4">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  icon={<MailCheck className="size-4" />}
+                  disabled={pending}
+                  onClick={() => switchMode("code")}
+                  className="w-full"
+                >
+                  Sign in with a one-time code
+                </Button>
+                <p className="text-center text-xs leading-relaxed text-subtle">
+                  No password needed — Supabase emails a code that works once.
+                </p>
+              </div>
+            )}
+
           </>
         )}
       </Panel>

@@ -9,6 +9,7 @@ import "./styles/index.css";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+import { registerOfflineWorker } from "@/offline/register-service-worker";
 
 const container = document.getElementById("root");
 
@@ -21,3 +22,8 @@ createRoot(container).render(
     <App />
   </StrictMode>,
 );
+
+// Production registers the offline shell; development registers the same worker
+// in its media-only mode, so the photograph cache is exercised in the preview
+// while Vite keeps ownership of the app shell and its modules.
+registerOfflineWorker();

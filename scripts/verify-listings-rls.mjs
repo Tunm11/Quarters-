@@ -56,8 +56,21 @@ const BOOTSTRAP = `
   create schema auth;
 
   create table auth.users (
+    instance_id uuid,
     id uuid primary key,
-    email text unique not null
+    aud text,
+    role text,
+    email text unique not null,
+    encrypted_password text,
+    email_confirmed_at timestamptz,
+    raw_app_meta_data jsonb,
+    raw_user_meta_data jsonb,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    confirmation_token text,
+    recovery_token text,
+    email_change_token_new text,
+    email_change text
   );
 
   create function auth.uid()
@@ -65,12 +78,9 @@ const BOOTSTRAP = `
   language sql
   stable
   as $fn$
-    select nullif(
-      coalesce(
-        current_setting('request.jwt.claims', true)::jsonb ->> 'sub',
-        current_setting('request.jwt.claim.sub', true)
-      ),
-      ''
+    select coalesce(
+      nullif(current_setting('request.jwt.claim.sub', true), ''),
+      nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub'
     )::uuid
   $fn$;
 
@@ -419,6 +429,57 @@ await test("public cannot read providers.owner_id", async () => {
     asRole("anon", null, (tx) => tx.query("select owner_id from public.providers limit 1")),
     "anon owner_id",
   );
+});
+
+await test("a signed-in user reads only their own provider application", async () => {
+  const lookup = (tx) =>
+    tx.query("select * from public.current_provider_application()").then(({ rows }) => rows);
+
+  const pending = await asRole("authenticated", U_PROVIDER_PENDING, lookup);
+  assertEqual(pending.length, 1);
+  assertEqual(pending[0].id, P_PENDING);
+  assertEqual(pending[0].status, "pending");
+  assert(!("owner_id" in pending[0]), "lookup must not expose owner_id");
+
+  const approved = await asRole("authenticated", U_PROVIDER_A, lookup);
+  assertEqual(approved.length, 1);
+  assertEqual(approved[0].id, P_A);
+  assertEqual(approved[0].status, "approved");
+
+  const none = await asRole("authenticated", U_STUDENT, lookup);
+  assertEqual(none.length, 0);
+
+  await expectDenied(
+    asRole("anon", null, (tx) =>
+      tx.query("select * from public.current_provider_application()"),
+    ),
+    "anon current provider application",
+  );
+});
+
+await test("the provider lookup reflects review decisions", async () => {
+  await withTx(async (tx, as) => {
+    await as("authenticated", U_PROVIDER_REJECTED);
+    const before = await tx.query(
+      "select status from public.current_provider_application()",
+    );
+    assertEqual(before.rows.length, 1);
+    assertEqual(before.rows[0].status, "rejected");
+
+    await as("authenticated", U_ADMIN);
+    await tx.query(
+      `insert into public.provider_reviews
+         (provider_id, decision, provider_note, reviewed_by)
+       values ($1, 'suspended', 'Suspended after a repeat report.', $2)`,
+      [P_REJECTED, U_ADMIN],
+    );
+
+    await as("authenticated", U_PROVIDER_REJECTED);
+    const after = await tx.query(
+      "select status from public.current_provider_application()",
+    );
+    assertEqual(after.rows[0].status, "suspended");
+  }, "rollback");
 });
 
 await test("public cannot read addresses, administration or event history", async () => {
@@ -2608,6 +2669,58 @@ await test("providers with listings cannot be deleted and audited drafts are ret
     },
     "rollback",
   );
+});
+
+await test("the mock listing seed is valid and publicly visible", async () => {
+  const seedSql = readFileSync(
+    join(process.cwd(), "supabase", "seed", "mock-listings.sql"),
+    "utf8",
+  );
+  const demoProvider = "d0000000-0000-4000-8000-000000000002";
+
+  await withTx(async (tx, as) => {
+    const statements = seedSql
+      .split(/;\s*(?:\n|$)/)
+      .map((statement) => statement.trim())
+      .filter(Boolean);
+    for (const [index, statement] of statements.entries()) {
+      try {
+        await tx.exec(`${statement};`);
+      } catch (error) {
+        throw new Error(
+          `seed statement ${index} failed: ${error.message}` +
+            `${error.detail ? ` | ${error.detail}` : ""}` +
+            `${error.where ? ` | at ${error.where}` : ""}` +
+            ` :: ${statement.replace(/\s+/g, " ").slice(0, 160)}`,
+        );
+      }
+    }
+
+    await as("anon", null);
+    const { rows } = await tx.query(
+      `select id, title, rent_amount, publication_status
+       from public.listings
+       where provider_id = $1
+       order by id`,
+      [demoProvider],
+    );
+    assertEqual(rows.length, 6);
+    assert(
+      rows.every((row) => row.publication_status === "published"),
+      "seeded listings should be published",
+    );
+    assert(
+      rows.every((row) => Number(row.rent_amount) > 0),
+      "seeded listings should carry real rent amounts",
+    );
+
+    const provider = await tx.query(
+      "select status from public.providers where id = $1",
+      [demoProvider],
+    );
+    assertEqual(provider.rows.length, 1);
+    assertEqual(provider.rows[0].status, "approved");
+  }, "rollback");
 });
 
 await test("saved listings are not implemented", async () => {

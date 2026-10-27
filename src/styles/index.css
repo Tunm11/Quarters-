@@ -12,32 +12,36 @@
     "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
 
-  /* Surfaces: charcoal layers, deepest page to highest raised panel. */
-  --color-canvas: #0a0a0d;
-  --color-canvas-soft: #0f0f14;
-  --color-panel: #141319;
-  --color-panel-raised: #1b1a22;
-  --color-panel-hover: #211f2a;
+  /* Surfaces: warm paper layers, deepest page to highest raised panel. */
+  --color-canvas: #f4f1ea;
+  --color-canvas-soft: #ece8de;
+  --color-panel: #ffffff;
+  --color-panel-raised: #f9f7f1;
+  --color-panel-hover: #efebe1;
 
-  /* Text: soft white down to muted grey. */
-  --color-foreground: #f5f3fa;
-  --color-muted: #a6a1b3;
-  --color-subtle: #837d92;
+  /* Text: near-black olive down to soft grey. */
+  --color-foreground: #23241d;
+  --color-muted: #6f7065;
+  --color-subtle: #85867b;
 
   /* Borders: subtle hairlines, with one stronger step for emphasis. */
-  --color-line: rgb(245 243 250 / 0.09);
-  --color-line-strong: rgb(245 243 250 / 0.18);
+  --color-line: rgb(35 36 29 / 0.09);
+  --color-line-strong: rgb(35 36 29 / 0.18);
 
-  /* Restrained purple accent. */
-  --color-accent: #8f7bf6;
-  --color-accent-strong: #7b64ee;
-  --color-accent-soft: #c8beff;
-  --color-accent-ink: #0b0913;
+  /* Quiet olive accent taken from the reference direction. */
+  --color-accent: #4b4f26;
+  --color-accent-strong: #3a3e1c;
+  --color-accent-soft: #656a34;
+  --color-accent-ink: #fcfbf5;
 
-  /* Semantic feedback colours, kept muted to fit the dark interface. */
-  --color-positive: #6fd6a8;
-  --color-caution: #e8c98a;
-  --color-danger: #f3a3a3;
+  /* Warm sand: quiet highlights (eyebrows, media placeholders). */
+  --color-sand: #8a7758;
+  --color-sand-soft: #d8ccb7;
+
+  /* Semantic feedback colours, tuned for the light paper interface. */
+  --color-positive: #2f7d5b;
+  --color-caution: #9a6b1f;
+  --color-danger: #b04444;
 
   /* Rounded surfaces. */
   --radius-tile: 0.875rem;
@@ -46,14 +50,14 @@
   --radius-pill: 999px;
 
   /* Depth. */
-  --shadow-panel: 0 24px 60px -32px rgb(0 0 0 / 0.9);
-  --shadow-float: 0 18px 40px -24px rgb(0 0 0 / 0.85);
-  --shadow-accent: 0 18px 45px -25px rgb(143 123 246 / 0.65);
+  --shadow-panel: 0 24px 60px -36px rgb(43 42 31 / 0.2);
+  --shadow-float: 0 18px 40px -24px rgb(43 42 31 / 0.22);
+  --shadow-accent: 0 18px 45px -25px rgb(75 79 38 / 0.45);
 }
 
 @layer base {
   html {
-    color-scheme: dark;
+    color-scheme: light;
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
   }
@@ -76,8 +80,14 @@
   }
 
   ::selection {
-    background-color: rgb(143 123 246 / 0.35);
+    background-color: rgb(75 79 38 / 0.22);
     color: var(--color-foreground);
+  }
+
+  /* Comfortable tap targets and scrolling on touch devices. */
+  a,
+  button {
+    -webkit-tap-highlight-color: transparent;
   }
 
   ::-webkit-scrollbar {
@@ -90,7 +100,7 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background-color: var(--color-panel-raised);
+    background-color: var(--color-line-strong);
     border: 2px solid var(--color-canvas);
     border-radius: var(--radius-pill);
   }
@@ -135,16 +145,32 @@
 /* Faint blueprint grid used behind hero sections. */
 @utility bg-grid {
   background-image:
-    linear-gradient(to right, rgb(245 243 250 / 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(245 243 250 / 0.04) 1px, transparent 1px);
+    linear-gradient(to right, rgb(35 36 29 / 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(35 36 29 / 0.045) 1px, transparent 1px);
   background-size: 72px 72px;
 }
 
-/* Soft purple glow used sparingly for focal points. */
+/* Olive hero surface used by the featured room card. */
+@utility bg-olive-hero {
+  background-image:
+    radial-gradient(120% 110% at 15% 0%, rgb(126 132 76 / 0.85) 0%, transparent 58%),
+    linear-gradient(155deg, #4b4f26 0%, #34371c 100%);
+}
+
+/* Quiet warm-sand wash used sparingly behind focal surfaces. */
+@utility bg-sand-wash {
+  background-image: radial-gradient(
+    80% 70% at 20% 0%,
+    rgb(154 133 99 / 0.16) 0%,
+    transparent 70%
+  );
+}
+
+/* Soft olive glow used sparingly for focal points. */
 @utility bg-glow {
   background-image: radial-gradient(
     60% 60% at 50% 0%,
-    rgb(143 123 246 / 0.22) 0%,
+    rgb(75 79 38 / 0.14) 0%,
     transparent 70%
   );
 }
@@ -152,4 +178,38 @@
 /* Fades long edges into the canvas. */
 @utility mask-fade-b {
   mask-image: linear-gradient(to bottom, black 65%, transparent 100%);
+}
+
+/* Manual "Reduce motion" preference from Settings (device preference too). */
+:root[data-reduce-motion="true"] {
+  scroll-behavior: auto;
+}
+
+:root[data-reduce-motion="true"] *,
+:root[data-reduce-motion="true"] *::before,
+:root[data-reduce-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Featured-room rotation: the incoming room rises and fades in. The reduced
+   motion rules above collapse this to an instant swap. */
+@layer components {
+  .featured-enter {
+    animation: featured-enter 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes featured-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }

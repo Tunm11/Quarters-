@@ -105,6 +105,27 @@ export async function ensureProfile(
   return { profile: data, error: null };
 }
 
+export async function updateAvatarPath(
+  client: TypedSupabaseClient,
+  userId: string,
+  avatarPath: string | null,
+): Promise<ProfileResult> {
+  const { data, error } = await client
+    .from("profiles")
+    .update({ avatar_url: avatarPath })
+    .eq("id", userId)
+    .select("*")
+    .single();
+
+  if (error) {
+    return { profile: null, error: mapProfileError(error) };
+  }
+  if (!data) {
+    return { profile: null, error: "Supabase did not confirm the photo update." };
+  }
+  return { profile: data, error: null };
+}
+
 export async function updateDisplayName(
   client: TypedSupabaseClient,
   userId: string,

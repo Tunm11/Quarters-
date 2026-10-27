@@ -124,4 +124,41 @@ describe("AuthProvider", () => {
     expect(result.current.status).toBe("signedOut");
     expect(result.current.session).toBeNull();
   });
+
+  it("flags an existing account instead of promising another email", async () => {
+    const original = mocks.client.auth.signUp;
+    // Supabase obfuscates a taken address as a user with no identities.
+    mocks.client.auth.signUp = async () => ({
+      data: {
+        session: null,
+        user: {
+          id: "user-2",
+          email: "taken@example.com",
+          user_metadata: {},
+          identities: [],
+        },
+      },
+      error: null,
+    });
+
+    try {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.status).toBe("signedOut");
+      });
+
+      let outcome:
+        | { requiresEmailConfirmation: boolean; alreadyRegistered: boolean }
+        | undefined;
+      await act(async () => {
+        outcome = await result.current.signUp("taken@example.com", "password123");
+      });
+
+      expect(outcome?.requiresEmailConfirmation).toBe(false);
+      expect(outcome?.alreadyRegistered).toBe(true);
+    } finally {
+      mocks.client.auth.signUp = original;
+    }
+  });
 });

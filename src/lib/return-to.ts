@@ -1,4 +1,5 @@
-export const AUTH_FALLBACK_PATH = "/account";
+/** Default destination after auth: the application's Home screen. */
+export const AUTH_FALLBACK_PATH = "/";
 
 /**
  * Accepts only same-origin, absolute paths. Rejects protocol-relative URLs

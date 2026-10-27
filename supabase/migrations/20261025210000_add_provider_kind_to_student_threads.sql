@@ -1,0 +1,69 @@
+-- The inbox filters conversations by who is on the other side. A student needs
+-- to tell an agent from a landlord, so the thread summary now carries the
+-- provider's kind. The return type changes, which Postgres cannot do in place.
+drop function if exists public.listing_chat_threads_for_student();
+
+create function public.listing_chat_threads_for_student()
+returns table (
+  listing_id uuid,
+  listing_title text,
+  provider_name text,
+  provider_kind public.provider_kind,
+  last_body text,
+  last_message_at timestamptz,
+  unread_count integer
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  with mine as (
+    select
+      lm.*,
+      l.title,
+      p.display_name as provider_name,
+      p.kind as provider_kind
+    from public.listing_messages lm
+    join public.listings l on l.id = lm.listing_id
+    join public.providers p on p.id = l.provider_id
+    where lm.student_id = (select auth.uid())
+  ),
+  latest as (
+    select
+      mine.*,
+      row_number() over (
+        partition by mine.listing_id
+        order by mine.created_at desc
+      ) as position
+    from mine
+  ),
+  unread as (
+    select
+      mine.listing_id,
+      count(*)::integer as unread_count
+    from mine
+    where mine.sender_id <> (select auth.uid())
+      and mine.read_at is null
+    group by mine.listing_id
+  )
+  select
+    latest.listing_id,
+    latest.title,
+    latest.provider_name,
+    latest.provider_kind,
+    latest.body,
+    latest.created_at,
+    coalesce(unread.unread_count, 0)
+  from latest
+  left join unread on unread.listing_id = latest.listing_id
+  where latest.position = 1
+  order by latest.created_at desc
+  limit 50;
+$$;
+
+comment on function public.listing_chat_threads_for_student() is
+  'Phase 2H: the caller''s own room conversations, newest first, with the lister kind. Student side only.';
+
+revoke all on function public.listing_chat_threads_for_student() from public, anon;
+grant execute on function public.listing_chat_threads_for_student() to authenticated;

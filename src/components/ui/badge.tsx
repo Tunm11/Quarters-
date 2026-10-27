@@ -1,13 +1,21 @@
 import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 
-export type BadgeTone = "neutral" | "accent" | "outline" | "positive";
+export type BadgeTone =
+  | "neutral"
+  | "accent"
+  | "outline"
+  | "positive"
+  | "caution"
+  | "danger";
 
 const toneStyles: Record<BadgeTone, string> = {
   neutral: "border-line bg-panel text-muted",
   accent: "border-accent/35 bg-accent/12 text-accent-soft",
   outline: "border-line-strong bg-transparent text-muted",
   positive: "border-positive/30 bg-positive/10 text-positive",
+  caution: "border-caution/30 bg-caution/10 text-caution",
+  danger: "border-danger/30 bg-danger/10 text-danger",
 };
 
 export type BadgeProps = HTMLAttributes<HTMLSpanElement> & {

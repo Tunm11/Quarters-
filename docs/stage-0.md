@@ -34,7 +34,7 @@
 ### Design tokens (`src/styles/index.css`)
 
 Charcoal surface scale (`canvas` → `panel-hover`), soft-white/muted/subtle text,
-hairline borders, restrained purple accent, muted feedback colours, rounded
+hairline borders, restrained olive accent, muted feedback colours, rounded
 surface radii, and two depth shadows. Base layer sets the dark colour scheme,
 typography, selection colour, scrollbars, global `:focus-visible` rings, and
 reduced-motion handling. Utilities: `bg-grid`, `bg-glow`, `mask-fade-b`,

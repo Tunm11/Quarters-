@@ -17,6 +17,10 @@ dist-ssr
 # Freebuff preview runtime artifacts
 .vly-run
 
+# Local copies of build output and Supabase CLI link state
+isolate
+supabase/.temp
+
 # Logs
 logs
 *.log

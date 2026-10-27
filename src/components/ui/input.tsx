@@ -11,6 +11,8 @@ export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className"
   icon?: ReactNode;
   /** Control rendered inside the field's right edge, e.g. a password toggle. */
   trailing?: ReactNode;
+  /** Rounded-pill field instead of the default rounded tile (search fields). */
+  pill?: boolean;
   className?: string;
   inputClassName?: string;
 };
@@ -22,6 +24,7 @@ export function Input({
   error,
   icon,
   trailing,
+  pill = false,
   className,
   inputClassName,
   id,
@@ -58,9 +61,12 @@ export function Input({
           aria-describedby={describedBy}
           aria-invalid={error ? true : undefined}
           className={cn(
-            "h-12 w-full rounded-tile border bg-panel text-sm text-foreground transition-colors placeholder:text-subtle hover:border-line-strong focus-visible:border-accent/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft disabled:cursor-not-allowed disabled:opacity-55",
+            "h-12 w-full border bg-panel text-sm text-foreground transition-colors placeholder:text-subtle hover:border-line-strong focus-visible:border-accent/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft disabled:cursor-not-allowed disabled:opacity-55",
+            pill ? "rounded-pill" : "rounded-tile",
             error ? "border-danger/60" : "border-line",
-            trailing ? "pr-12" : icon ? "pr-4 pl-11" : "px-4",
+            // Padding is computed (not overlapping) because cn does not merge classes.
+            icon ? "pl-11" : "pl-4",
+            trailing ? "pr-12" : "pr-4",
             inputClassName,
           )}
           {...rest}
