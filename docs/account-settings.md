@@ -11,9 +11,9 @@ Migration: `supabase/migrations/20261025400000_add_account_avatars_and_deletion.
 bun scripts/apply-sql.mjs supabase/migrations/20261025400000_add_account_avatars_and_deletion.sql
 ```
 
-Until it is applied, photo uploads and account deletion return an explicit
-"account migration has not been applied" message. Email change needs no
-migration.
+The migration is applied to the live project. If it is ever missing, photo
+uploads and account deletion return an explicit "account migration has not been
+applied" message rather than claiming success. Email change needs no migration.
 
 ## Email change
 

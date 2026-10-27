@@ -38,7 +38,7 @@ Supabase. No mock API, mock auth, or fallback backend exists. Email change,
 profile photos and account deletion are implemented against real Supabase Auth,
 Storage and Postgres — see [`docs/account-settings.md`](docs/account-settings.md).
 
-**Phase 2B — listings foundation (version-controlled, not applied live).**
+**Phase 2B — listings foundation (applied).**
 The accommodation schema, provider-approval model, RLS policies, grants,
 post-publication moderation, content-edit history, revision-checked
 administrative holds/restoration with lock-ordered address/image/Storage
@@ -58,24 +58,22 @@ reads and writes only the signed-in user's row; if the table or an RLS policy is
 missing, it shows an explicit profile error instead of pretending the profile
 loaded.
 
-**Saved-room alerts (version-controlled, not applied live).**
+**Saved-room alerts (applied).**
 `20261025390000_add_saved_room_alert_kinds.sql` and
 `20261025391000_add_saved_room_alerts.sql` add triggers on `public.listings`: a
 change to rent, billing period or availability on a public room writes an
 activity row for every account that saved it, which the existing push trigger
 then delivers. The Settings switch for these alerts is stored on
 `profiles.saved_room_alerts` (default on) because a database trigger cannot read
-a device preference. Until those two migrations are applied to the project, the
-switch is present but no alerts are written.
+a device preference. Both migrations are applied to the project.
 
-**Account settings (version-controlled, not applied live).**
+**Account settings (applied).**
 `20261025400000_add_account_avatars_and_deletion.sql` adds a private `avatars`
 bucket (owner-only writes, signed reads), a trigger that keeps
 `profiles.avatar_url` inside the caller's own folder, and
 `delete_own_account(p_confirm)`, the SECURITY DEFINER RPC the Settings screen
 calls. Email change needs no migration: it uses Supabase Auth's confirmation
-flow. Until the migration is applied, uploads and deletion report that the
-account migration is missing instead of claiming success. Apply it with:
+flow. Uploads and deletion work against the applied migration. Applied with:
 
 ```sh
 bun scripts/apply-sql.mjs supabase/migrations/20261025400000_add_account_avatars_and_deletion.sql
@@ -84,16 +82,15 @@ bun scripts/apply-sql.mjs supabase/migrations/20261025400000_add_account_avatars
 See [`docs/account-settings.md`](docs/account-settings.md) for the flow, the
 refusal rules and the remaining limits.
 
-**Devices and sessions (version-controlled, not applied live).**
+**Devices and sessions (applied).**
 `20261025420000_add_session_management.sql` adds `list_own_sessions()` and
 `revoke_own_session(uuid)`, two SECURITY DEFINER RPCs that expose only the
 caller's own rows in Supabase's `auth.sessions` table. Settings → **Devices &
 sessions** lists each signed-in device (browser and platform summarised from the
 stored user agent, last refresh, IP, first sign-in), flags this browser, ends a
 single session, and can sign out every other device (Supabase
-`signOut({ scope: 'others' })`) or every device including this one. Until the
-migration is applied, the section reports that session management is missing
-instead of showing a device list. Apply it with:
+`signOut({ scope: 'others' })`) or every device including this one. The section
+reads the applied RPCs. Applied with:
 
 ```sh
 bun scripts/apply-sql.mjs supabase/migrations/20261025420000_add_session_management.sql
@@ -367,6 +364,30 @@ The listing migrations are applied to the Supabase project. Apply future
 schema changes with the Supabase CLI (or database credentials) and explicit
 owner approval; see the Phase 2B document for the `db push` and
 type-generation commands.
+
+### Migration status
+
+Every file in `supabase/migrations/` is applied to the live project. Check that
+from the workspace rather than trusting this page:
+
+```sh
+bun scripts/apply-sql.mjs --status --host aws-0-eu-west-1.pooler.supabase.com
+```
+
+`--status` is read-only. It reads what each local file declares — tables,
+columns, functions, triggers, policies, indexes, constraints, enum values,
+publication members, Storage buckets and column comments — and asks the live
+catalogue which of those are absent. The probe exists because files applied with
+`apply-sql.mjs` are not recorded in `supabase_migrations.schema_migrations`: that
+table only holds versions the Supabase CLI pushed, so history alone cannot tell
+an unapplied migration from an unrecorded one. Objects a later migration drops,
+and comments a later migration rewrites, are not counted against the file that
+first created them.
+
+Last checked on 2026-10-27: 59 files fully present, 1 superseded by a later
+migration (`20261025200000`, whose function `20261025210000` drops and
+replaces), 0 with objects missing. No migration was applied because none was
+pending.
 
 The baseline file was renamed from `20261022120000_create_profiles.sql` to
 match the applied version. Renaming a file does not change database history.

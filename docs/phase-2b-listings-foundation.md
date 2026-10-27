@@ -1,9 +1,9 @@
 # Phase 2B — Supabase listings foundation
 
-**Status: hold/restoration and lock-hardening design added, version-controlled
-but not applied live.** The three Phase 2B migrations are still unapplied and
-unshared, so they were revised in place rather than corrected with a forward
-migration. The applied profile migrations were not edited.
+**Status: applied live.** The design below was written while the three Phase 2B
+migrations were still unapplied and unshared, which is why they were revised in
+place rather than corrected with a forward migration. They have since been
+applied to the project. The applied profile migrations were not edited.
 
 ## Inspection before this correction
 
@@ -499,10 +499,11 @@ state.
 | `20261022153200` | `create_listing_foundation` | `supabase/migrations/20261022153200_create_listing_foundation.sql` |
 | `20261022153400` | `create_listing_image_storage` | `supabase/migrations/20261022153400_create_listing_image_storage.sql` |
 
-These files are **not applied** and are not in shared history. They were revised
-in place for this correction. The applied profile migrations and migration
-history were untouched. No live database, Storage, Auth or PostgREST change was
-made; no commit, push or deploy was performed.
+When this correction was written these files were **not applied** and not in
+shared history, so they were revised in place. They have since been applied to
+the project. The applied profile migrations and migration history were
+untouched. No live database, Storage, Auth or PostgREST change was made at the
+time; no commit, push or deploy was performed then.
 
 To apply later (project owner, with Supabase CLI credentials and explicit
 authorisation):

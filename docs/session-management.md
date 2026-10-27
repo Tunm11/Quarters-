@@ -18,9 +18,9 @@ bun scripts/apply-sql.mjs --host aws-0-eu-west-1.pooler.supabase.com \
   supabase/migrations/20261025420000_add_session_management.sql
 ```
 
-Applied to the live project on 2026-10-26. Until it is applied, the section shows "Session management is not enabled on
-this database yet. The session migration has not been applied." — it never
-invents a device list. The two sign-out scopes that Supabase Auth implements
+Applied to the live project on 2026-10-26. If the RPCs are ever missing, the
+section shows "Session management is not enabled on this database yet. The
+session migration has not been applied." — it never invents a device list. The two sign-out scopes that Supabase Auth implements
 natively (`local`, `global`, `others`) work without the migration.
 
 ## Where the data comes from
