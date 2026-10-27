@@ -9,6 +9,7 @@ import "./styles/index.css";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+import { AppErrorBoundary } from "@/components/feedback/error-boundary";
 import { registerOfflineWorker } from "@/offline/register-service-worker";
 
 const container = document.getElementById("root");
@@ -19,7 +20,11 @@ if (!container) {
 
 createRoot(container).render(
   <StrictMode>
-    <App />
+    {/* Outside the router, so a crash in the shell or a failed lazy route
+        still renders a real screen instead of a blank page. */}
+    <AppErrorBoundary>
+      <App />
+    </AppErrorBoundary>
   </StrictMode>,
 );
 

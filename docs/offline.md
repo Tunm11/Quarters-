@@ -57,6 +57,13 @@ list untouched. There is no offline write queue, so nothing is lost silently.
 - **Per screen:** `OfflineCopyNotice` appears on Saved and Messages when the rows
   on screen came from the cache — "Offline copy, last read 12 minutes ago.
   Changes are not sent until you are back online."
+- **Full screen:** `NoNetworkScreen` replaces the page when a route could not
+  load at all because the browser is offline — the common case being a tap on a
+  screen whose code was never cached. It is a distinct situation from the banner:
+  here there is nothing to show, so it offers a retry and a link to the saved
+  rooms that do still open. `CrashScreen` is its sibling for failures that are
+  our bug rather than the connection's; both are raised by `RouteError`, and by
+  `AppErrorBoundary` when a render crash would otherwise leave a blank page.
 
 ## Photographs
 
